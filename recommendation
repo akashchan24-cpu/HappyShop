@@ -1,0 +1,72 @@
+import java.util.*;
+
+public class RecommendationEngine {
+
+    // Main recommendation method
+    public List<Product> recommend(ProductDatabase db, String searchTerm) {
+        List<Product> allProducts = db.getProducts();
+        List<ScoredProduct> scoredList = new ArrayList<>();
+
+        for (Product product : allProducts) {
+            double score = calculateScore(product, searchTerm);
+            scoredList.add(new ScoredProduct(product, score));
+        }
+
+        // Sort by highest score
+        scoredList.sort((a, b) -> Double.compare(b.score, a.score));
+
+        // Return top 3 recommendations
+        List<Product> recommendations = new ArrayList<>();
+        for (int i = 0; i < Math.min(3, scoredList.size()); i++) {
+            recommendations.add(scoredList.get(i).product);
+        }
+
+        return recommendations;
+    }
+
+    // Scoring algorithm
+    private double calculateScore(Product product, String searchTerm) {
+        double score = 0;
+
+        String lowerSearch = searchTerm.toLowerCase();
+        String productName = product.getName().toLowerCase();
+        String category = product.getCategory().toLowerCase();
+
+        // 1. Name similarity (highest weight)
+        if (productName.contains(lowerSearch)) {
+            score += 50;
+        }
+
+        // 2. Category similarity
+        if (category.contains(lowerSearch)) {
+            score += 30;
+        }
+
+        // 3. Partial word matching
+        for (String word : lowerSearch.split(" ")) {
+            if (productName.contains(word)) {
+                score += 10;
+            }
+        }
+
+        // 4. Price weighting (example: prefer mid-range items)
+        if (product.getPrice() < 100) {
+            score += 5;
+        } else if (product.getPrice() < 500) {
+            score += 10;
+        }
+
+        return score;
+    }
+
+    // Helper class for sorting
+    private static class ScoredProduct {
+        Product product;
+        double score;
+
+        ScoredProduct(Product product, double score) {
+            this.product = product;
+            this.score = score;
+        }
+    }
+}
